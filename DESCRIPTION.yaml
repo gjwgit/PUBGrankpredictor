@@ -1,0 +1,18 @@
+meta:
+  name         : battle
+  title        : Predict a top 10 player in the PUBBG game.
+  keywords     : r, games
+  version      : 1.0.0
+  languages    : R
+  modeller     : rpart
+  type         : decision tree
+  display      : demo
+  license      : mit
+  author       : anshulbansal2209@gmail.com
+  maintainer   : Graham.Williams@togaware.com
+  url          : https://github.com/anshul2209/PUBGrankpredictor
+dependencies:
+  ubuntu: xpdf
+  CRAN: dplyr, ggplot2, 
+commands:
+  demo    : Step through data science analysis to then build a model.
