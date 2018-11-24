@@ -22,10 +22,10 @@ library(ROCR) #roc curve
 
 # Data Ingestion
 
-system.time(players <- read.csv("data.csv"))
+system.time(pubg <- read.csv("pubg.csv"))
 
-ds.name <- "players"
-ds <- get(ds.name)
+dsname <- "pubg"
+ds <- get(dsname)
 
 
 names(ds) #variables present in the dataset
