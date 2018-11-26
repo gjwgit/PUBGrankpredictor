@@ -1,108 +1,142 @@
-# Load required packages from local library into the R session.
+###########################################################################
+# A Data Science Analysis of the PlayerUnknown's BattleGrounds (PUBG) data
+#
+# See https://github.com/anshul2209/PUBGrankpredictor
+#
+# Essential Data Science Template R from Graham.Williams@togaware.com
+#
+# Template applied to pubg dataset by Anshul Bansal as a Jupyter Notebook
+#
+# Converted to MLHub package by Graham and Anshul.
+#
+# License: MIT
 
-library(dplyr) # Data wrangling, glimpse() and tbl_df().
-library(ggplot2) # Visualise data.
-library(lubridate) # Dates and time.
-library(randomForest) # Impute missing values with na.roughfix().
-library(readr) # Efficient reading of CSV data.
-library(rattle) # normVarNames().
-library(magrittr) # Pipes %>%, %T>% and equals(), extract().
-library(scales) # Format comma().
-library(ggplot2) # Visualise data.
-library(tidyr) # Prepare a tidy dataset, gather().
-library(stringi) # String concat operator %s+%.
-library(FSelector) # Feature selection: information.gain().
-library(tibble) # Convert row names into a column.
-library(lubridate) # Dates and time.
-library(GGally) # extension to ggplot2
-library(gridExtra) # grid evaluation
-library(rpart) #rpart function
-library(ROCR) #roc curve
+cat("====================================
+PlayerUnknown's BattleGrounds (PUBG)
+====================================
 
+This package illustrates the use of an Essentials of Data Science Template for
+the analysis of a dataset provided by the publishers of the PlayerUnknown's
+BattleGrounds datset. We illustrate the use of the template to gain insights
+into the data and then to model a derived outcome: top 10 player.
+
+Please wait while we load the data.
+")
+
+suppressMessages(
+{
+  # Load required packages from local library into the R session.
+
+  library(dplyr) 	# Data wrangling, glimpse() and tbl_df().
+  library(ggplot2)      # Visualise data.
+  library(lubridate)    # Dates and time.
+  library(randomForest) # Impute missing values with na.roughfix().
+  library(readr)        # Efficient reading of CSV data.
+  library(rattle)       # normVarNames().
+  library(magrittr)     # Pipes %>%, %T>% and equals(), extract().
+  library(scales)       # Format comma().
+  library(ggplot2)      # Visualise data.
+  library(tidyr)        # Prepare a tidy dataset, gather().
+  library(stringi)      # String concat operator %s+%.
+  library(FSelector)    # Feature selection: information.gain().
+  library(tibble)       # Convert row names into a column.
+  library(lubridate)    # Dates and time.
+  library(GGally)       # Extension to ggplot2
+  library(gridExtra)    # Grid evaluation
+  library(rpart)        # rpart function
+  library(ROCR)         # ROC curve
+})
 
 # Data Ingestion
 
-system.time(pubg <- read.csv("pubg.csv"))
-
+pubg   <- read.csv("pubg.csv") # 3s
 dsname <- "pubg"
-ds <- get(dsname)
+ds     <- get(dsname)
+
+cat("\nPress Enter to continue with the analysis: ")
+invisible(readChar("stdin", 1))
+
+# Exploring The Shape of the Data
+
+sprintf("
+=================
+Shape of the Data
+=================
+
+Dataset with %s observations (players) of %s variables.
+", comma(nrow(ds)), comma(ncol(ds))) %>% cat()
 
 
-names(ds) #variables present in the dataset
+cat("
+=========
+Variables
+=========
+
+The original variable names are normalised into our prefered standard format
+and below we list the first few and last few variables.
+
+")
 
 # Normalizing Variable Names
 
 names(ds) %<>% normVarNames()
 
-# Confirm the results are as expected.
+# Confirm the results are as expected and review the data.
 
-names(ds)
+nc <- ncol(ds)
+dc <- 5 # Number of columns to display to fit the screen.
 
-# Data Review
+glimpse(ds[1:dc])
+cat("\n")
+glimpse(ds[(nc-dc+1):nc])
 
-glimpse(ds)
+cat("\nPress Enter to continue with the analysis: ")
+invisible(readChar("stdin", 1))
 
+# The target variable is_top_ten which we will create based on win_place_perc.
 
-# In[5]:
+target <- "is_top_ten"
 
-
-# The target variable is_top_ten which we will create based win_place_perc
-
-ds <- ds %>% 
+ds %<>% 
   mutate(is_top_ten = if_else(ds$win_place_perc >= 0.9, TRUE, FALSE))
 
-glimpse(ds) #taking a glimpse after a new variable has been added.
+# Visualising and checking the distribution of the target variable.
 
-# assigning is_top_ten as target variable
-target <- ds$is_top_ten
+sprintf("
+===================
+Target Distribution
+===================
 
-#visualising and checking the distribution of target varibale in the dataset
+A binary target variable is created. It records whether the player is in
+the top ten percent of all players. The target is derived from the variable
+win_place_perc. Of the %s observations there are %s that are in the top
+10 percent, making that %d%% as targets.
+",
+nrow(ds) %>% comma(),
+ds[[target]] %>% sum() %>% comma(),
+round(100*sum(ds[[target]])/nrow(ds))) %>% cat()
+
+cat("
+Press Enter to continue to a plot of the distribution: ")
+invisible(readChar("stdin", 1))
+
+cat("
+Close the plot window (Ctrl-w) to continue: ")
+
+fname <- "battle_target_distribution.pdf"
+pdf(file=fname, width=8)
 ds %>%
   ggplot(aes_string(x=target)) +
   geom_bar(width=0.2, fill="grey") +
   theme(text=element_text(size=14)) +
   scale_y_continuous(labels=comma) +
-  labs(title = "Distribution of is_top_ten",
-       x = "is_top_ten",
+  labs(title = "Distribution of Target : Top Ten Percent of Players",
+       x = "Top Ten",
        y = "Count",
-       caption = "Source: PUBG DATASET")
-nrow(subset(ds, target == TRUE))
+       caption = "Source: PUBG Dataset")
+invisible(dev.off())
+system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=TRUE)
 
-
-# In[6]:
-
-
-# Exploring The Shape of the Data
-
-dim(ds) #rows and columns
-
-nrow(ds) %>% comcat() #number of rows
-ncol(ds) %>% comcat() #number of columns
-head(ds) #first 6 observations
-tail(ds) #last 6 observations
-
-
-# In[7]:
-
-
-# assigning the target variable "is_top_ten" to target
-
-target <- ds$is_top_ten
-
-# find all the types of variables present in the dataset
-
-sapply(ds, class)
-
-
-# ## Variable Analysis
-
-# In[8]:
-
-
-# Anaylse variables of dataset
-
-"All Variable"
-names(ds)
 
 "Kills Summary"
 summary(ds$kills)
@@ -459,33 +493,49 @@ information.gain(form, ds[vars]) %>%
 options(repr.plot.width = 10, repr.plot.height = 4)
 
 
-# In[47]:
+cat("
+=====================
+Distribution of Kills
+=====================
 
+The variable *kills* records the number of enemy kills achieved by the player.
+Most players die without killing anybody in the game.
 
-names(ds)
+Close the plot window (Ctrl-w) to continue: ")
 
-
-# In[52]:
-
-
-# Plot the kills by the player distribution 
+fname <- "battle_kills_distribution.pdf"
+pdf(file=fname, width=8)
 ds %>%
-    ggplot(aes(x=kills)) +
-    geom_bar()
+  ggplot(aes(x=kills)) +
+  geom_bar() +
+  scale_y_continuous(labels=comma)
+invisible(dev.off())
+system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=TRUE)
 
+cat("\n")
 
-# Plot the kills vs the is_top_ten by the player 
+cat("
+===============================
+Distribution of Kills by Target
+===============================
+
+Here we also include the distribution of the target variable (*is_top_ten*)
+within the distribution of *kills*. Observe that players with kills in the
+range 6-8 appear to have a higher probability of coming in the top ten.
+
+Close the plot window (Ctrl-w) to continue: ")
+
+fname <- "battle_kills_target_distribution.pdf"
+pdf(file=fname, width=8)
 ds %>%
     ggplot(aes(x=kills, fill=is_top_ten)) +
     geom_bar()
+invisible(dev.off())
+system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=TRUE)
+
+cat("\n")
 
 
-# Observations
-# * Most of the player die without killing anybody in the game.
-# * Players with kills in the range of 6-8 have higher probability of coming in top ten.
-# 
-
-# In[58]:
 
 
 options(repr.plot.width = 20, repr.plot.height = 8)
