@@ -1,9 +1,17 @@
 # Install and configure Ubuntu system dependencies for the pre-built model.
 #
+#
+
+# DOWNLOAD THE DATASET FROM GITHUB
+
+
+# 
 # We choose to install user local packages using install-packages()
 # rather than OS supplied packages to minimise the need for sys admin
 # access from within mlhub. R itself is often operating system
 # installed though not necessarily.
+
+
 
 # Use atril to display PDF files to avoid broken evince on Azure DSVM.
 
