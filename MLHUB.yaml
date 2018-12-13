@@ -1,4 +1,4 @@
---- ## PUBG RANK PREDICTOR
+--- # PUBG RANK PREDICTOR
 meta:
   name         : battle
   title        : Predict a top 10 player in the PUBG game.
