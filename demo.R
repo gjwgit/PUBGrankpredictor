@@ -18,7 +18,8 @@ PlayerUnknown's BattleGrounds (PUBG)
 This package illustrates the use of an Essentials of Data Science Template for
 the analysis of a dataset provided by the publishers of the PlayerUnknown's
 BattleGrounds datset. We illustrate the use of the template to gain insights
-into the data and then to model a derived outcome: top 10 player.
+into the data and then to model a derived outcome: the player is in the top
+10% of player.
 
 Please wait while we load the data.
 ")
@@ -38,6 +39,7 @@ suppressMessages(
   library(ggplot2)      # Visualise data.
   library(tidyr)        # Prepare a tidy dataset, gather().
   library(stringi)      # String concat operator %s+%.
+  library(stringr)      # String manipulation.
   library(FSelector)    # Feature selection: information.gain().
   library(tibble)       # Convert row names into a column.
   library(lubridate)    # Dates and time.
@@ -53,45 +55,89 @@ pubg   <- read.csv("pubg.csv") # 3s
 dsname <- "pubg"
 ds     <- get(dsname)
 
-cat("\nPress Enter to continue with the analysis: ")
+cat("Press Enter to begin the data review: ")
 invisible(readChar("stdin", 1))
 
 # Exploring The Shape of the Data
 
 sprintf("
-=================
-Shape of the Data
-=================
+================
+Data Preparation
+================
 
-Dataset with %s observations (players) of %s variables.
+The provided dataset contains %s observations (players) of %s variables.
 ", comma(nrow(ds)), comma(ncol(ds))) %>% cat()
 
 
 cat("
-=========
-Variables
-=========
-
-The original variable names are normalised into our prefered standard format
-and below we list the first few and last few variables.
+As standard practise for the Essentials templates the original variable
+names are normalised into our prefered standard format. Here we illustrate
+that transformation from the original names to the normalised names.
 
 ")
+
+names(ds) %>%
+  paste(collapse=", ") %>%
+  paste("Original Names: ", .) %>%
+  str_wrap(width=78) %>%
+  cat() 
 
 # Normalizing Variable Names
 
 names(ds) %<>% normVarNames()
 
+cat("\n\n")
+
+names(ds) %>%
+  paste(collapse=", ") %>%
+  paste("Normalised Names: ", .) %>%
+  str_wrap(width=78) %>%
+  cat() 
+
+cat("\n\nPress Enter to continue with the data review: ")
+invisible(readChar("stdin", 1))
+
+cat("
+================
+Data Observation
+================
+
+Below we list the first few variables, reporting their data type
+together with the first few values of the variables from the dataset.
+Notice that variables like x, id, group_id, match_id are clearly
+identifiers and thus have no role in the analysis for our purposes.
+
+")
+
 # Confirm the results are as expected and review the data.
 
 nc <- ncol(ds)
-dc <- 5 # Number of columns to display to fit the screen.
+dc <- 11 # Number of columns to display to fit the screen.
 
 glimpse(ds[1:dc])
-cat("\n")
-glimpse(ds[(nc-dc+1):nc])
+
+cat("\nPress Enter to continue with the data review: ")
+invisible(readChar("stdin", 1))
+
+cat("
+================
+Data Observation
+================
+
+Here we see a random selection of variables and their data type and the first
+few values of the variables from the dataset.
+
+")
+
+glimpse(ds[sample(nc, dc)])
 
 cat("\nPress Enter to continue with the analysis: ")
 invisible(readChar("stdin", 1))
+
+# * There are some variables like ids, groupids, x which doesn't give any information about data modelling so we may want to remove those data points.
+
+
+# TODO VISUALISE THE win_place_perc DISTRIBUTION.
 
 # The target variable is_top_ten which we will create based on win_place_perc.
 
@@ -107,10 +153,13 @@ sprintf("
 Target Distribution
 ===================
 
-A binary target variable is created. It records whether the player is in
-the top ten percent of all players. The target is derived from the variable
-win_place_perc. Of the %s observations there are %s that are in the top
-10 percent, making that %d%% as targets.
+We will create a binary target variable for our model demonstration. The target
+will record whether the player is in the top ten percent of all players. The
+target is derived from the variable win_place_perc. Of the %s observations
+there are %s that are in the top 10 percent, making that %d%% as targets.
+
+We can visulaise this distribution of the target variable to reinforce the
+observations we have just made.
 ",
 nrow(ds) %>% comma(),
 ds[[target]] %>% sum() %>% comma(),
@@ -119,9 +168,6 @@ round(100*sum(ds[[target]])/nrow(ds))) %>% cat()
 cat("
 Press Enter to continue to a plot of the distribution: ")
 invisible(readChar("stdin", 1))
-
-cat("
-Close the plot window (Ctrl-w) to continue: ")
 
 fname <- "battle_target_distribution.pdf"
 pdf(file=fname, width=8)
@@ -135,30 +181,104 @@ ds %>%
        y = "Count",
        caption = "Source: PUBG Dataset")
 invisible(dev.off())
-system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=TRUE)
+system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=FALSE)
+
+cat("
+Close the plot window using Ctrl-w
+Press Enter to continue: ")
+invisible(readChar("stdin", 1))
+
+cat("
+=================
+Data Observations
+=================
+
+Many of the other variables in the dataset will be used to predict the target.
+It is useful to observe these variables to gain some understanding and to
+ensure the data itself appears to have integrity.
+
+=====================
+Distribution of Kills
+=====================
+
+First we review the distribution of the number of kills. The variable *kills*
+records the number of enemy kills achieved by the player. Noting that this is
+an integer variable ranging from 0 to 35 in value, we will plot the
+distribution. Most players die without killing anybody in the game. 
+
+Press Enter to review the distrbution of the number of kills: ")
+invisible(readChar("stdin", 1))
+
+fname <- "battle_kills_distribution.pdf"
+pdf(file=fname, width=12)
+ds %>%
+  ggplot(aes(x=kills)) +
+  geom_bar() +
+  scale_y_continuous(labels=comma)
+invisible(dev.off())
+system(paste("xpdf", fname), ignore.stderr=TRUE, wait=FALSE)
+
+cat("
+
+Close the plot window using Ctrl-w.
+Press Enter to continue: ")
+invisible(readChar("stdin", 1))
+
+cat("
+===============================
+Distribution of Kills by Target
+===============================
+
+The previous plot shows just the distribution of the specific variable. It
+can also be useful to view the break-up of the target variable for each
+segment. The following plot will do so. That is, we include the distribution
+of the target variable (*is_top_ten*) within the distribution of *kills*.
+We can then observe that players with higher kills have a higher chance of
+being in the top ten.
+
+Press Enter to continue on to the plot: ")
+invisible(readChar("stdin", 1))
 
 
-"Kills Summary"
-summary(ds$kills)
+fname <- "battle_kills_target_distribution.pdf"
+pdf(file=fname, width=12)
+ds %>%
+    ggplot(aes(x=kills, fill=is_top_ten)) +
+    geom_bar()
+invisible(dev.off())
+system(paste("xpdf", fname), ignore.stderr=TRUE, wait=FALSE)
 
-"Walk Distance Summary"
-summary(ds$walk_distance)
+cat("
+Close the plot window using Ctrl-w.
+Press Enter to continue: ")
+invisible(readChar("stdin", 1))
 
-"Weapons Acquired Summary"
-summary(ds$weapons_acquired)
+cat("
+========================
+Basic Variable Summaries
+========================
 
-"Match Duration Summary"
-summary(ds$match_duration)
+")
 
-"Match Type Summary"
+summary(ds %>% select(walk_distance, weapons_acquired, match_duration))
+
+cat("
+Press Enter to continue: ")
+invisible(readChar("stdin", 1))
+
+cat("
+================
+Types of Matches
+================
+")
+
 table(ds$match_type)
 
+cat("
+Press Enter to continue: ")
+invisible(readChar("stdin", 1))
 
-# ## Dataset Observations
-# 
-# * The data has 1,00,000 rows and 31 columns. 
-# * The data has variables which is a mixture of integer, numeric variable types.
-# * There are some variables like ids, groupids, x which doesn't give any information about data modelling so we may want to remove those data points.
+stop("UP TO HERE")
 # 
 # * Most number of kills by a player in a game is 48 and minimum is 0.
 # * Player walked a maximum distance of 13530 metres in the game
@@ -493,47 +613,6 @@ information.gain(form, ds[vars]) %>%
 options(repr.plot.width = 10, repr.plot.height = 4)
 
 
-cat("
-=====================
-Distribution of Kills
-=====================
-
-The variable *kills* records the number of enemy kills achieved by the player.
-Most players die without killing anybody in the game.
-
-Close the plot window (Ctrl-w) to continue: ")
-
-fname <- "battle_kills_distribution.pdf"
-pdf(file=fname, width=8)
-ds %>%
-  ggplot(aes(x=kills)) +
-  geom_bar() +
-  scale_y_continuous(labels=comma)
-invisible(dev.off())
-system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=TRUE)
-
-cat("\n")
-
-cat("
-===============================
-Distribution of Kills by Target
-===============================
-
-Here we also include the distribution of the target variable (*is_top_ten*)
-within the distribution of *kills*. Observe that players with kills in the
-range 6-8 appear to have a higher probability of coming in the top ten.
-
-Close the plot window (Ctrl-w) to continue: ")
-
-fname <- "battle_kills_target_distribution.pdf"
-pdf(file=fname, width=8)
-ds %>%
-    ggplot(aes(x=kills, fill=is_top_ten)) +
-    geom_bar()
-invisible(dev.off())
-system(sprintf("xpdf %s", fname), ignore.stderr=TRUE, wait=TRUE)
-
-cat("\n")
 
 
 
