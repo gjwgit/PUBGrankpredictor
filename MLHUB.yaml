@@ -14,6 +14,6 @@ meta:
   url          : https://github.com/gjwgit/PUBGrankpredictor
 dependencies:
   system: xpdf
-  cran: dplyr, ggplot2, 
+  cran: dplyr, ggplot2, FSelector, GGally, gridExtra, ROCR
 commands:
   demo    : Step through data science analysis to then build a model.
