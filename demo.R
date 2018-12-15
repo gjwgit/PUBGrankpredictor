@@ -278,29 +278,18 @@ cat("
 Press Enter to continue: ")
 invisible(readChar("stdin", 1))
 
-stop("UP TO HERE")
-# 
-# * Most number of kills by a player in a game is 48 and minimum is 0.
-# * Player walked a maximum distance of 13530 metres in the game
-# * A player aquires maximum of 72 weapons in a game match
-# * Match duration ranges from ~2.5 minutes to 37 minutes.
-# * Most preferred match type is "squad_fpp" and least preferred match type is "normal_solo"
-# 
+cat("
+==============
+Data Wrangling
+==============
 
-# # Data Wrangling
-# 
-# Data wrangling, sometimes referred to as data munging, is the process of transforming and mapping data from one "raw" data form into another format with the intent of making it more appropriate and valuable for a variety of downstream purposes such as analytics.
-# 
-# There are variables which take a particular set of values and can be converted to factor variables.
-# 
+Data wrangling, sometimes referred to as data munging, is the process of
+transforming and mapping data from a raw form into a structured format with
+the intent of making it more appropriate and valuable for a variety of
+downstream purposes such as analytics.
 
-# ## Data cleaning
-# 
-
-# In[9]:
-
-
-# How many variables in the dataset have unique values and can be coverted to factors
+Here we choose a number of variables to be coverted into factors. First
+we can check the number of unique values for each variable.")
 
 sapply(ds, function(x) length(unique(x)))
 
@@ -308,6 +297,8 @@ sapply(ds, function(x) length(unique(x)))
 
 vnames <- c("assists","dbnos", "headshot_kills", "boosts", "revives", "match_type", "vehicle_destroys", "road_kills", "kill_streaks", "is_top_ten")
 
+
+stop("UP TO HERE")
 
 # In[54]:
 
